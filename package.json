@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "matroska-subtitles": "^3.3.2",
-    "srt-parser-2": "^1.2.3"
+    "matroska-subtitles": "^3.3.2"
   }
 }

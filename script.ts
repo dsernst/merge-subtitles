@@ -1,6 +1,5 @@
-import { createReadStream, writeFileSync, readFileSync } from 'fs'
+import { createReadStream, writeFileSync } from 'fs'
 import { SubtitleParser } from 'matroska-subtitles'
-// import { SrtParser } from 'srt-parser-2'
 
 async function extractSubtitles(filePath: string) {
   return new Promise((resolve, reject) => {
@@ -14,19 +13,16 @@ async function extractSubtitles(filePath: string) {
 
     parser.once('tracks', (tracks) => {
       trackInfo = tracks
-      //   console.log('trackInfo', trackInfo)
       trackInfo.forEach((track) => {
         if (track.name === 'Forced') vietnameseTrack = track.number
         if (!track.language && !track.name) englishTrack = track.number
       })
       console.log('Found Vietnamese track:', vietnameseTrack)
       console.log('Found English track', englishTrack)
-
       console.log('\nExtracting subtitles...\n')
     })
 
     parser.on('subtitle', (subtitle, trackNumber) => {
-      //   console.log('subtitles', subtitle, trackNumber)
       if (trackNumber === englishTrack) {
         englishSubtitles.push(subtitle)
         console.log('found english', englishSubtitles.length + 1)
@@ -44,9 +40,12 @@ async function extractSubtitles(filePath: string) {
 
     stream.on('close', () => {
       if (englishSubtitles.length && vietnameseSubtitles.length) {
-        writeFileSync('english.srt', convertToSRT(englishSubtitles))
-        writeFileSync('vietnamese.srt', convertToSRT(vietnameseSubtitles))
-        console.log('Subtitles extracted successfully.')
+        const mergedSubtitles = mergeSubtitles(
+          englishSubtitles,
+          vietnameseSubtitles
+        )
+        writeFileSync('merged.srt', convertToSRT(mergedSubtitles))
+        console.log('Subtitles extracted and merged successfully.')
         resolve(true)
       } else {
         console.log('Failed to extract subtitles.')
@@ -78,23 +77,11 @@ function formatTime(ms) {
   return `${hours}:${minutes}:${seconds},${milliseconds}`
 }
 
-// function mergeSubtitles() {
-//   const englishSubFile = readFileSync('english.srt', 'utf-8')
-//   const vietnameseSubFile = readFileSync('vietnamese.srt', 'utf-8')
-
-//   const parser = new SrtParser()
-//   const englishSubs = parser.fromSrt(englishSubFile)
-//   const vietnameseSubs = parser.fromSrt(vietnameseSubFile)
-
-//   const mergedSubs = [...englishSubs, ...vietnameseSubs].sort((a, b) => {
-//     return a.startTime < b.startTime ? -1 : 1
-//   })
-
-//   const mergedSrt = parser.toSrt(mergedSubs)
-//   writeFileSync('merged.srt', mergedSrt)
-
-//   console.log('Subtitles merged successfully.')
-// }
+function mergeSubtitles(englishSubtitles, vietnameseSubtitles) {
+  return [...englishSubtitles, ...vietnameseSubtitles].sort((a, b) => {
+    return a.time < b.time ? -1 : 1
+  })
+}
 
 async function main() {
   const filePath = process.argv[2]
@@ -105,7 +92,6 @@ async function main() {
 
   try {
     await extractSubtitles(filePath)
-    // mergeSubtitles()
   } catch (error) {
     console.error(error)
   }
