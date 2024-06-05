@@ -44,6 +44,7 @@ async function extractSubtitles(filePath: string) {
           englishSubtitles,
           vietnameseSubtitles
         )
+        const directory = filePath.split('/').slice(0, -1).join('/')
         const filename = filePath
           .split('/')
           .at(-1)
@@ -51,7 +52,7 @@ async function extractSubtitles(filePath: string) {
           .slice(0, -1)
           .join('.')
         writeFileSync(
-          `merged-subtitles-${filename}.srt`,
+          `${directory}/merged-subtitles-${filename}.srt`,
           convertToSRT(mergedSubtitles)
         )
         console.log('Subtitles extracted and merged successfully.')
